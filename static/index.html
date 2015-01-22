@@ -1,0 +1,42 @@
+<html>
+<head>
+  <script src="/static/dygraph-combined.js"></script>
+  <title>Quick and dirty viewer for power meter data.</title>
+  <style>
+    html, body { width:100%; height:100%; margin:0; }
+  </style>
+</head>
+<body>
+  <div><div id="graphdiv"></div></div>
+  <script type="text/javascript">
+    var resize = function(event) {
+      var elem = document.getElementById('graphdiv');
+      elem.style.width = (window.innerWidth - 20) + 'px';
+      elem.style.height = (window.innerHeight - 50) + 'px';
+    };
+    window.onresize = resize;
+    resize();
+    var graph = new Dygraph(
+        document.getElementById('graphdiv'),
+        '/data.csv',
+        { 
+          title: "Household Power Usage",
+          ylabel: "kW",
+          axes: {
+            x: { 
+              pixelsPerLabel: 70,
+              axisLabelFontSize: 13,
+              axisLabelFormatter: function(x) { return Dygraph.dateString_(x*1000); },
+              valueFormatter: function(x) { return Dygraph.dateString_(x*1000); },
+            },
+            y: {
+              includeZero: true
+            }
+          },
+          rollPeriod: 5,
+          errorBars: true,
+          gridLineWidth: 0.5,
+        });
+  </script>
+</body>
+</html>
