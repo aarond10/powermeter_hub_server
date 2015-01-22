@@ -34,6 +34,12 @@ class SecureHTTPRequestHandler(SimpleHTTPRequestHandler):
     self.wfile = socket._fileobject(self.request, "wb", self.wbufsize)
 
 class FakeEfergyServer(SecureHTTPRequestHandler):
+  """Pretends to be a sensornet.info server.
+
+  The firmware in the hub that I have (v1.1 AU) *requires* HTTP/1.1 and 
+  a graceful SSL shutdown handshake. SSL certificate fields may also be 
+  checked but I've just copied all of those so I'm not sure.
+  """
   protocol_version = 'HTTP/1.1'
 
   def do_GET(self):
