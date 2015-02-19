@@ -1,10 +1,7 @@
 import db
-from SocketServer import BaseServer
 from BaseHTTPServer import HTTPServer
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 import logging
-import time
-import socket
 import urlparse
 
 class NodeMCUServer(SimpleHTTPRequestHandler):
