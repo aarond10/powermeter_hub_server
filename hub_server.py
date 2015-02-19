@@ -106,13 +106,8 @@ class FakeEfergyServer(SecureHTTPRequestHandler):
 
       data = self.rfile.read(int(self.headers['content-length'])).split('|')
       value = float(data[-1][:-1].split(',')[-1])
-      logging.info("%s, %s" % (time.time(), value))
-      
-      global db
-      db.execute('INSERT INTO readings(timestamp, value) VALUES (?,?)',
-                (int(time.time()), value))
-      db.commit()
-      print url.path, value
+      logging.info("%s, %s, %s" % (url.path, time.time(), value))
+      db.LogData('efergy', value)
       
     self.send_response(200)
     self.send_header("Content-Type", "text/html; charset=UTF-8")
