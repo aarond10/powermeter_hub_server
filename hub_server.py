@@ -6,10 +6,7 @@ from OpenSSL import SSL
 import logging
 import time
 import socket
-import sqlite3
 import urlparse
-
-db = sqlite3.connect('readings.db')
 
 class SecureHTTPServer(HTTPServer):
   def __init__(self, server_address, HandlerClass):
