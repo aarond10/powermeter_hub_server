@@ -15,7 +15,7 @@ class NodeMCUServer(SimpleHTTPRequestHandler):
     q = urlparse.parse_qs(url.query)
 
     if url.path == '/data':
-      db.LogData(q['dev'][0], q['val'][0])
+      db.LogData(q['dev'][0], float(q['val'][0]))
       logging.info("%s, %s" % (q['dev'][0], q['val'][0]))
       self.send_response(200)
     else:
