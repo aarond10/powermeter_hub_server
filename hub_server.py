@@ -1,3 +1,4 @@
+import db
 from SocketServer import BaseServer
 from BaseHTTPServer import HTTPServer
 from SimpleHTTPServer import SimpleHTTPRequestHandler
@@ -113,7 +114,6 @@ class FakeEfergyServer(SecureHTTPRequestHandler):
       db.commit()
       print url.path, value
       
-      
     self.send_response(200)
     self.send_header("Content-Type", "text/html; charset=UTF-8")
     self.end_headers()
@@ -124,15 +124,14 @@ class FakeEfergyServer(SecureHTTPRequestHandler):
     self.connection.close()
 
 def run_server():
-    server_address = ('', 8080) # (address, port)
-    httpd = SecureHTTPServer(server_address, FakeEfergyServer)
-    sa = httpd.socket.getsockname()
-    print "Serving HTTPS on", sa[0], "port", sa[1], "..."
-    httpd.serve_forever()
+  server_address = ('', 8080) # (address, port)
+  httpd = SecureHTTPServer(server_address, FakeEfergyServer)
+  sa = httpd.socket.getsockname()
+  print "Serving HTTPS on", sa[0], "port", sa[1], "..."
+  httpd.serve_forever()
 
 
 if __name__ == '__main__':
-  db.cursor().execute('CREATE TABLE IF NOT EXISTS readings '
-                      '(timestamp INTEGER, value REAL)')
   logging.basicConfig()
+  db.SetupDb('readings.db')
   run_server()

@@ -45,7 +45,9 @@ class MyWebServer(SimpleHTTPRequestHandler):
 
       global db
       cur = db.cursor()
-      data = cur.execute('SELECT * from readings').fetchall()
+      data = cur.execute('SELECT timestamp, sum(value)/count(*) from readings '
+          'where label_id=(select label_id from labels where label=?) '
+          'group by cast(timestamp / 300 as int)', ('efergy',)).fetchall()
       for timestamp, amps in data:
         self.wfile.write('%s,%s,0.02\n' % (
             timestamp, amps * self.MAINS_VOLTAGE * self.POWER_FACTOR / 1000000))
