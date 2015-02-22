@@ -18,6 +18,8 @@ def SetupDb(path):
       'CREATE INDEX IF NOT EXISTS readings_timestamp ON readings(timestamp)')
   db.cursor().execute(
       'CREATE INDEX IF NOT EXISTS readings_label_id ON readings(label_id)')
+  db.cursor().execute(
+      'CREATE INDEX IF NOT EXISTS readings_label_id_timestamp ON readings(label_id, timestamp)')
 
 def LogData(label, value, timestamp=-1):
   """Log an event/value pair.

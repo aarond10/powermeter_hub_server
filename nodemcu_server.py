@@ -21,6 +21,9 @@ class NodeMCUServer(SimpleHTTPRequestHandler):
     else:
       self.send_response(404)
 
+  def do_POST(self):
+    return self.do_GET()
+
 def run_server():
   server_address = ('', 8079) # (address, port)
   httpd = HTTPServer(server_address, NodeMCUServer)
