@@ -10,6 +10,35 @@
     .selected { font-weight: bold; }
   </style>
   <script>
+    var drawGraph = function(div_id, title, url, yaxis) {
+      new Dygraph(
+        document.getElementById(div_id), url,
+        { 
+          title: title,
+          ylabel: yaxis,
+          axes: {
+            x: { 
+              pixelsPerLabel: 70,
+              axisLabelFontSize: 13,
+              axisLabelFormatter: function(x) { return Dygraph.dateString_(x*1000); },
+              valueFormatter: function(x) { return Dygraph.dateString_(x*1000); },
+            },
+            y: {
+              includeZero: true
+            }
+          },
+          errorBars: true,
+          gridLineWidth: 0.5,
+        });
+    }
+    var titles = {
+      'efergy': 'Household Power Usage',
+      '10461765': 'Upstairs Temperature',
+    };
+    var yaxes = {
+      'efergy': 'kW',
+      '10461765': 'C'
+    };
     angular.module('grapher', ['ngRoute'])
       .config(function($routeProvider) {
         $routeProvider
@@ -30,47 +59,30 @@
         $http.get('/data/labels.json')
           .success(function(data) { $scope.labels = data; console.log(data); })
           .error(function(data, status) { alert("Error loading labels: " + status); });
-        $scope.duration = '1w';
+        $scope.duration = '1d';
       })
       .controller('LabelView', function($scope, $route, $routeParams) {
+        $scope.title = "All timeseries"
+        $scope.order = 'name';
+        console.log($scope.labels);
+        $scope.drawGraph = function(id) {
+          $scope.$watch(function() { return $scope.duration }, function() {
+          drawGraph('graph' + id,
+                    titles[id] || id, 
+                    '/data/' + id + '?duration=' + $scope.duration,
+                    yaxes[id] || 'Value');
+          });
+        };
       })
       .controller('GraphView', function($scope, $route, $routeParams) {
+        $scope.title = label_id;
         var label_id = $routeParams.label_id;
-        var drawGraph = function(div_id, title, url, yaxis) {
-          new Dygraph(
-            document.getElementById(div_id), url,
-            { 
-              title: title,
-              ylabel: yaxis,
-              axes: {
-                x: { 
-                  pixelsPerLabel: 70,
-                  axisLabelFontSize: 13,
-                  axisLabelFormatter: function(x) { return Dygraph.dateString_(x*1000); },
-                  valueFormatter: function(x) { return Dygraph.dateString_(x*1000); },
-                },
-                y: {
-                  includeZero: true
-                }
-              },
-              errorBars: true,
-              gridLineWidth: 0.5,
-            });
-        }
-        var titles = {
-          'efergy': 'Household Power Usage',
-          '10461765': 'Upstairs Temperature'
-        };
-        var yaxes = {
-          'efergy': 'kW',
-          '10461765': 'C'
-        };
-        if (yaxes[label_id] !== undefined) {
+        if (titles[label_id] !== undefined) {
           $scope.$watch(function() { return $scope.duration }, function() {
           drawGraph('graph',
                     titles[label_id], 
                     '/data/' + label_id + '?duration=' + $scope.duration,
-                    yaxes[label_id]);
+                    yaxes[label_id] || 'Value');
           });
         }
       })
@@ -78,10 +90,12 @@
   <script type="text/ng-template" id="label_view.html">
     <h2>Labels</h2>
     <div style="padding:8px;">
-      Time series:
-      <div ng-repeat="(k,v) in labels">
-        <div><a href="#/graph/{{v}}">{{v}}</a></div>
+      <div ng-repeat="l in labels | orderBy:order">
+        <a href="#/graph/{{l.name}}">
+          <div style="float:left; width:320px;margin-top:20px;" id="graph{{l.name}}" ng-init="drawGraph(l.name)"></div>
+        </a>
       </div>
+      <div style="clear:left;"></div>
     </div>
   </script>
   <script type="text/ng-template" id="graph_view.html">
@@ -92,11 +106,10 @@
       <a ng-class="{selected:duration=='1d'}" ng-click="duration='1d'">1d</a> |
       <a ng-class="{selected:duration=='1h'}" ng-click="duration='1h'">1h</a>
     </div>
-    <h2>{{label_id}}</h2>
+    <h2>{{title}}</h2>
     <hr>
+    <div><a href="#/">Top</a></div>
     <div class="graph"><div id="graph" style="width:800px; height:400px;"></div></div>
-    <h2>{{label}}</h2>
-    <hr>
   </script>
 </head>
 <body>
