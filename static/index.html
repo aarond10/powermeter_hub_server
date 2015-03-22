@@ -8,6 +8,17 @@
     html, body { width:100%; height:100%; margin:0; }
     div.graph {padding:20px;}
     .selected { font-weight: bold; }
+    #duration {
+      background:#fff;
+      z-index:1;
+      position:fixed;
+      bottom:0px;
+      right:0px;
+      height:24px;
+      padding:8px 8px 0 8px;
+      border-top:1px solid #888;
+      border-left:1px solid #888;
+    }
   </style>
   <script>
     var drawGraph = function(div_id, title, url, yaxis) {
@@ -54,44 +65,69 @@
           redirectTo: '/'
         });
       })
-      .controller('MainController', function($scope, $route, $routeParams, $http) {
+      .controller('MainController', function($scope, $route, $http, $rootScope) {
         $scope.labels = [];
         $http.get('/data/labels.json')
-          .success(function(data) { $scope.labels = data; console.log(data); })
+          .success(function(data) { $scope.labels = data; })
           .error(function(data, status) { alert("Error loading labels: " + status); });
-        $scope.duration = '1d';
+        $rootScope.routeParams = {
+          duration: '1d'
+        };
+
+        $scope.$watch(function() { return JSON.stringify($scope.routeParams); }, function() { 
+          if (!$route.current || !$route.current.params) { console.log('No route. returning.'); return; }
+          var re = /^\d+[dwh]$/;
+          if (!re.exec($scope.routeParams.duration)) {
+            console.log('Provided duration invalid. Setting to "1d".');
+            $scope.routeParams.duration = '1d';
+          }
+          $route.updateParams($scope.routeParams); 
+        });
       })
-      .controller('LabelView', function($scope, $route, $routeParams) {
+      .controller('LabelView', function($scope, $routeParams, $timeout, $location) {
+        // Take a copy of route state and update if user changes it via any links.
+        if ($routeParams.duration)
+          $scope.routeParams.duration = $routeParams.duration;
+
+        $scope.showLabel = function(label) { $location.path('/graph/' + label); }
+
         $scope.title = "All timeseries"
         $scope.order = 'name';
-        console.log($scope.labels);
         $scope.drawGraph = function(id) {
-          $scope.$watch(function() { return $scope.duration }, function() {
-          drawGraph('graph' + id,
-                    titles[id] || id, 
-                    '/data/' + id + '?duration=' + $scope.duration,
-                    yaxes[id] || 'Value');
-          });
+          $timeout(function() {
+            drawGraph('graph' + id,
+                      titles[id] || id, 
+                      '/data/' + id + '?duration=' + $routeParams.duration,
+                      yaxes[id] || 'Value');
+          }, 0);
         };
       })
-      .controller('GraphView', function($scope, $route, $routeParams) {
-        $scope.title = label_id;
+      .controller('GraphView', function($scope, $routeParams, $location) {
+        // Take a copy of route state and update if user changes it via any links.
+        if ($routeParams.duration)
+          $scope.routeParams.duration = $routeParams.duration;
+
         var label_id = $routeParams.label_id;
-        if (titles[label_id] !== undefined) {
-          $scope.$watch(function() { return $scope.duration }, function() {
-          drawGraph('graph',
-                    titles[label_id], 
-                    '/data/' + label_id + '?duration=' + $scope.duration,
-                    yaxes[label_id] || 'Value');
-          });
-        }
+        $scope.title = titles[label_id] || label_id;
+        $scope.top = function() { $location.path('/'); }
+        drawGraph('graph',
+                  $scope.title,
+                  '/data/' + label_id + '?duration=' + $routeParams.duration,
+                  yaxes[label_id] || 'Value');
       })
   </script>
+  <div id="duration">
+    Duration: 
+    <a href="javascript:void(0)" ng-class="{selected:routeParams.duration=='30d'}" ng-click="routeParams.duration='30d'">30d</a> |
+    <a href="javascript:void(0)" ng-class="{selected:routeParams.duration=='1w'}" ng-click="routeParams.duration='1w'">1w</a> |
+    <a href="javascript:void(0)" ng-class="{selected:routeParams.duration=='1d'}" ng-click="routeParams.duration='1d'">1d</a> |
+    <a href="javascript:void(0)" ng-class="{selected:routeParams.duration=='1h'}" ng-click="routeParams.duration='1h'">1h</a>
+  </div>
   <script type="text/ng-template" id="label_view.html">
     <h2>Labels</h2>
     <div style="padding:8px;">
       <div ng-repeat="l in labels | orderBy:order">
-        <a href="#/graph/{{l.name}}">
+        <a href="javascript:void(0)" ng-click="showLabel(l.name)">
           <div style="float:left; width:320px;margin-top:20px;" id="graph{{l.name}}" ng-init="drawGraph(l.name)"></div>
         </a>
       </div>
@@ -99,16 +135,9 @@
     </div>
   </script>
   <script type="text/ng-template" id="graph_view.html">
-    <div style="position:fixed;bottom:0px;right:0px;height:24px;padding:8px 8px 0 8px;border-top:1px solid #888; border-left:1px solid #888;">
-      Duration: 
-      <a ng-class="{selected:duration=='30d'}" ng-click="duration='30d'">30d</a> |
-      <a ng-class="{selected:duration=='1w'}" ng-click="duration='1w'">1w</a> |
-      <a ng-class="{selected:duration=='1d'}" ng-click="duration='1d'">1d</a> |
-      <a ng-class="{selected:duration=='1h'}" ng-click="duration='1h'">1h</a>
-    </div>
     <h2>{{title}}</h2>
     <hr>
-    <div><a href="#/">Top</a></div>
+    <div><a href="javascript:void()" ng-click="top()">Top</a></div>
     <div class="graph"><div id="graph" style="width:800px; height:400px;"></div></div>
   </script>
 </head>
