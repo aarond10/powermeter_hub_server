@@ -85,7 +85,7 @@ class FakeEfergyServer(SecureHTTPRequestHandler):
     url = urlparse.urlparse(self.path)
     q = urlparse.parse_qs(url.query)
 
-    if url.path == '/h2':
+    if url.path == '/h2' or url.path == '/h3':
       # Sensor data!
       # Headers look like this:
       #   x-uptime: <seconds since boot>
@@ -95,16 +95,33 @@ class FakeEfergyServer(SecureHTTPRequestHandler):
       #   x-mode: E1
       #   x-ts: <uptime seconds as 32-bit hex value>:<milliseconds in decimal?>
       #   content-type: application/eh-data
-      # Data looks like this:
-      #   <SID>|1|<SensorType>|<Port>,<value to 2 decimal places>.
-      #   SID is a sensor id. 6 digit integer.
-      #   SensorType is EFCT for CT transmitters, not sure about others.
-      #   Port is P1 and presumable P2,P3 but untested.
-
-      data = self.rfile.read(int(self.headers['content-length'])).split('|')
-      value = float(data[-1][:-1].split(',')[-1])
-      logging.info("%s, %s, %s" % (url.path, time.time(), value))
-      db.LogData('efergy', value)
+      # This is followed by a \r\n-terminated line for each connected sensor.
+      # Data for each sensor looks like this:
+      #   <SID>|1|<SensorType>|<Port>,<value to 2 decimal places>
+      #   SID is a sensor id, a 6 digit integer. I've seen this be zero occasionally,
+      #   which typically goes away after we respond with a 200 OK.
+      #   SensorType is EFCT for CT transmitters, not sure about others - but I've seen my EFT
+      #   sensor return 'EFMS1' in this field:
+      #     <SID>|0|EFMS1|M,64.00&T,0.00&L,0.00|-62
+      #   Port is P1, even on (my) multi-CT setup.
+    
+      hubVersion = url.path.strip('/')
+      httpData = self.rfile.read(int(self.headers['content-length']))
+      sensorLines = httpData.split('\r\n')
+      for line in sensorLines:
+            if len(line) == 0:
+		continue
+            data = line.split('|')
+            SID = data[0]
+            if SID == '0':
+                continue
+            portAndValue = data[3]
+            value = float(portAndValue.split(',')[1])
+            label = 'efergy_%s_%s' % (hubVersion, SID)
+            print portAndValue.split(',')
+            print "%s, %s, %s" % (url.path, time.time(), value)
+            logging.info("%s, %s, %s, %s" % (SID, url.path, time.time(), value))
+            db.LogData(label, value)
       
     self.send_response(200)
     self.send_header("Content-Type", "text/html; charset=UTF-8")

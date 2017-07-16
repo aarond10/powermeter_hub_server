@@ -82,11 +82,15 @@ class MyWebServer(SimpleHTTPRequestHandler):
           'where label_id=(select label_id from labels where label=?) '
           'and timestamp > ? group by cast(timestamp / ? as int)',
           (label, start_time, sample_interval)).fetchall()
-      if label == 'efergy':
+      if label.startswith('efergy_h2'):
         # Adjust for power factor.
         for timestamp, amps in data:
           self.wfile.write('%s,%s,0.02\n' % (
             timestamp, amps * self.MAINS_VOLTAGE * self.POWER_FACTOR / 1000000))
+      elif label.startswith('efergy_h3'):
+        # Raw data is returned in tens of watts.
+        for timestamp, amps in data:
+          self.wfile.write('%s,%s,0.02\n' % (timestamp, amps / 10 ))
       else:
         # Just write raw values.
         for timestamp, val in data:
