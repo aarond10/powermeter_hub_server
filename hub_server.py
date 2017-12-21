@@ -118,8 +118,6 @@ class FakeEfergyServer(SecureHTTPRequestHandler):
             portAndValue = data[3]
             value = float(portAndValue.split(',')[1])
             label = 'efergy_%s_%s' % (hubVersion, SID)
-            print portAndValue.split(',')
-            print "%s, %s, %s" % (url.path, time.time(), value)
             logging.info("%s, %s, %s, %s" % (SID, url.path, time.time(), value))
             db.LogData(label, value)
       
