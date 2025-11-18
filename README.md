@@ -1,4 +1,11 @@
 # powermeter_hub_server
+
+> **⚠️ NOTICE: This repository is no longer actively maintained.**
+>
+> This project has been stale for some time. For a more modern, improved, and actively maintained version, please visit:
+>
+> **https://github.com/DevOldSchool/powermeter_hub_server**
+
 A small web sever for logging power usage data from the Efergy Engage Hub without internet/cloud access.
 
 These devices are sold for ~$120 AUD and the hardware looks quite well built.
